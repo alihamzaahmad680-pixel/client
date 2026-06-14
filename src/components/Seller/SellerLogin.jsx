@@ -18,7 +18,7 @@ const SellerLogin = () => {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:4000/api/seller/login",
+        "https://server-kohl-nine-68.vercel.app/api/seller/login",
         {
           email,
           password,

@@ -21,8 +21,8 @@ export const Login = () => {
       
       const endpoint =
         state === "signup"
-          ? "http://localhost:4000/api/user/register"
-          : "http://localhost:4000/api/user/login";
+          ? "https://server-kohl-nine-68.vercel.app/api/user/register"
+          : "https://server-kohl-nine-68.vercel.app/api/user/login";
 
       const { data } = await axios.post(endpoint, payload, {
         withCredentials: true,
