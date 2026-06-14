@@ -6,7 +6,7 @@ import axios from "axios";
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL =
   // import.meta.env.VITE_BACKEND_URL || "https://server-kohl-nine-68.vercel.app/";
-  import.meta.env.VITE_BACKEND_URL || "server-kohl-nine-68.vercel.app";
+  import.meta.env.VITE_BACKEND_URL || "greencart-iota-one.vercel.app";
 
 export const AppContext = createContext();
 
