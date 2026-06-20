@@ -320,13 +320,22 @@ const Cart = () => {
     return total;
   };
 
+  const authHeaders = {
+    headers: {
+      token: localStorage.getItem("token"),
+    },
+  };
+
   const fetchUserAddresses = async () => {
     try {
-      const { data } = await axios.post("/api/address/get");
+      const { data } = await axios.post("/api/address/get", {}, authHeaders);
 
       if (data.success && data.addresses.length > 0) {
         setAddresses(data.addresses);
         setSelectedAddress(data.addresses[0]);
+      } else {
+        setAddresses([]);
+        setSelectedAddress(null);
       }
     } catch (error) {
       console.log("Error fetching addresses:", error.message);
@@ -352,7 +361,11 @@ const Cart = () => {
       };
 
       if (paymentMethod === "Stripe") {
-        const { data } = await axios.post("/api/order/stripe", orderData);
+        const { data } = await axios.post(
+          "/api/order/stripe",
+          orderData,
+          authHeaders,
+        );
 
         if (data.success) {
           toast.loading("Redirecting to Stripe Checkout...");
@@ -361,14 +374,18 @@ const Cart = () => {
           toast.error(data.message || "Stripe session creation failed");
         }
       } else {
-        const { data } = await axios.post("/api/order/cod", orderData);
+        const { data } = await axios.post(
+          "/api/order/cod",
+          orderData,
+          authHeaders,
+        );
 
         if (data.success) {
           toast.success("Order Placed Successfully!");
           setCartItems({});
           navigate("/my-orders");
         } else {
-          toast.error(data.message);
+          toast.error(data.message || "Order failed");
         }
       }
     } catch (error) {
