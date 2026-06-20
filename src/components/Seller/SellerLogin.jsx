@@ -1,10 +1,9 @@
 // import { useEffect, useState } from "react";
 // import { useAppContext } from "../../context/AppContext";
-// import axios from "axios";
 // import toast from "react-hot-toast";
 
 // const SellerLogin = () => {
-//   const { isSeller, setIsSeller, navigate } = useAppContext();
+//   const { isSeller, setIsSeller, navigate, axios } = useAppContext();
 
 //   const [email, setEmail] = useState("");
 //   const [password, setPassword] = useState("");
@@ -17,14 +16,10 @@
 //     }
 
 //     try {
-//       const { data } = await axios.post(
-//         "https://server-kohl-nine-68.vercel.app/api/seller/login",
-//         {
-//           email,
-//           password,
-//         },
-//         { withCredentials: true },
-//       );
+//       const { data } = await axios.post("/api/seller/login", {
+//         email,
+//         password,
+//       });
 
 //       if (data.success) {
 //         setIsSeller(true);
@@ -37,6 +32,7 @@
 //         toast.error(error.response.data.message || "Invalid Credentials");
 //       } else {
 //         console.error("Network or setup error:", error.message);
+//         toast.error("Network Error: Backend connection failed");
 //       }
 //     }
 //   };
@@ -105,7 +101,6 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const SellerLogin = () => {
-  // یہاں ہم نے useAppContext سے گلوبل axios کو نکالا ہے
   const { isSeller, setIsSeller, navigate, axios } = useAppContext();
 
   const [email, setEmail] = useState("");
@@ -113,13 +108,13 @@ const SellerLogin = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
 
     try {
-      // پرانا لنک ہٹا کر صحیح مینوئل اینڈ پوائنٹ لگا دیا
       const { data } = await axios.post("/api/seller/login", {
         email,
         password,
@@ -127,13 +122,19 @@ const SellerLogin = () => {
 
       if (data.success) {
         setIsSeller(true);
+        localStorage.setItem("isSeller", "true");
+        localStorage.setItem("token", data.token);
         navigate("/seller");
       } else {
-        toast.error(data.message || "Login failed");
+        toast.error(data.message || data.meassage || "Login failed");
       }
     } catch (error) {
       if (error.response && error.response.data) {
-        toast.error(error.response.data.message || "Invalid Credentials");
+        toast.error(
+          error.response.data.message ||
+            error.response.data.meassage ||
+            "Invalid Credentials",
+        );
       } else {
         console.error("Network or setup error:", error.message);
         toast.error("Network Error: Backend connection failed");

@@ -29,7 +29,7 @@
 //       formData.append("productData", JSON.stringify(productData));
 
 //       files.forEach((file) => {
-//         if (file) {
+//         if (file && file instanceof File) {
 //           formData.append("images", file);
 //         }
 //       });
@@ -61,7 +61,6 @@
 //         onSubmit={onSubmitHandler}
 //         className="md:p-10 p-4 space-y-5 max-w-lg"
 //       >
-
 //         <div>
 //           <p className="text-base font-medium">Product Image</p>
 
@@ -77,19 +76,21 @@
 //                     accept="image/*"
 //                     onChange={(e) => {
 //                       const updated = [...files];
-//                       updated[index] = e.target.files[0];
-//                       setFiles(updated);
+//                       if (e.target.files[0]) {
+//                         updated[index] = e.target.files[0];
+//                         setFiles(updated);
+//                       }
 //                     }}
 //                   />
 
 //                   <img
 //                     src={
-//                       files[index]
+//                       files[index] && files[index] instanceof File
 //                         ? URL.createObjectURL(files[index])
 //                         : assets.upload_area
 //                     }
 //                     alt="upload"
-//                     className="max-w-24 cursor-pointer"
+//                     className="max-w-24 cursor-pointer object-cover h-24 w-24 rounded border"
 //                   />
 //                 </label>
 //               ))}
@@ -147,7 +148,7 @@
 
 //         <button
 //           type="submit"
-//           className="bg-green-600 text-white px-6 py-2 rounded"
+//           className="bg-green-600 text-white px-6 py-2 rounded font-medium hover:bg-green-700 transition-colors"
 //         >
 //           ADD PRODUCT
 //         </button>
@@ -193,24 +194,32 @@ const AddProduct = () => {
         }
       });
 
-      const { data } = await axios.post("/api/product/add", formData);
+      const { data } = await axios.post("/api/product/add", formData, {
+        headers: {
+          token: localStorage.getItem("token"),
+        },
+      });
 
       if (data.success) {
         toast.success(data.message);
 
         await fetchProducts();
 
+        setFiles([]);
         setName("");
         setDescription("");
         setCategory("");
         setPrice("");
         setOfferPrice("");
-        setFiles([]);
       } else {
-        toast.error(data.message);
+        toast.error(data.message || data.meassage || "Something went wrong");
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(
+        error.response?.data?.message ||
+          error.response?.data?.meassage ||
+          error.message,
+      );
     }
   };
 
@@ -235,6 +244,7 @@ const AddProduct = () => {
                     accept="image/*"
                     onChange={(e) => {
                       const updated = [...files];
+
                       if (e.target.files[0]) {
                         updated[index] = e.target.files[0];
                         setFiles(updated);
@@ -270,6 +280,7 @@ const AddProduct = () => {
           placeholder="Product Description"
           className="w-full border p-2"
           rows={4}
+          required
         />
 
         <select
