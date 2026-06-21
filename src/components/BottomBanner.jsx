@@ -1,4 +1,3 @@
-
 import { assets, features } from "../assets/assets";
 
 const BottomBanner = () => {
@@ -42,7 +41,7 @@ const BottomBanner = () => {
 
         {features.map((feature, index) => (
           <div key={index} className="flex items-start gap-3 mb-4">
-            <img src={feature.icon}     className="w-8 h-8" />
+            <img src={feature.icon} className="w-8 h-8" />
             <div>
               <h3 className="text-base font-semibold text-primary">
                 {feature.title}

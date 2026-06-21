@@ -4,10 +4,7 @@ import ProductCard from "./ProductCard";
 const BestSeller = () => {
   const { products } = useAppContext();
 
-  
-  const best = products
-    ?.filter((p) => p.inStock !== false) 
-    .slice(0, 4);
+  const best = products?.filter((p) => p.inStock !== false).slice(0, 4);
 
   return (
     <div className="mt-10 px-4 md:px-10">
