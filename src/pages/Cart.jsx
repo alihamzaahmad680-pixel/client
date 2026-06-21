@@ -327,7 +327,7 @@ const Cart = () => {
     navigate,
     axios,
     user,
-    setShowUserLogin, // Login modal trigger karne ke liye
+    setShowUserLogin, // Login modal show karne ke liye
   } = useAppContext();
 
   const [showAddress, setShowAddress] = useState(false);
@@ -357,6 +357,9 @@ const Cart = () => {
       if (data.success && data.addresses.length > 0) {
         setAddresses(data.addresses);
         setSelectedAddress(data.addresses[0]);
+      } else {
+        setAddresses([]);
+        setSelectedAddress(null);
       }
     } catch (error) {
       console.log("Error fetching addresses:", error.message);
@@ -364,18 +367,12 @@ const Cart = () => {
   };
 
   const handlePlaceOrder = async () => {
-    // Agar user login nahi hai, to login modal dikhayein
-    if (!user) {
-      setShowUserLogin(true);
-      return toast.error("Please login to place an order!");
-    }
     if (!selectedAddress) {
       return toast.error("Please add or select a delivery address first!");
     }
     if (cartProducts.length === 0) {
       return toast.error("Your cart is empty!");
     }
-
     try {
       const orderData = {
         address: selectedAddress._id,
@@ -384,7 +381,6 @@ const Cart = () => {
           quantity: cartItems[product._id],
         })),
       };
-
       if (paymentMethod === "Stripe") {
         const { data } = await axios.post(
           "/api/order/stripe",
@@ -392,10 +388,10 @@ const Cart = () => {
           authHeaders,
         );
         if (data.success) {
-          toast.loading("Redirecting to Stripe...");
+          toast.loading("Redirecting to Stripe Checkout...");
           window.location.replace(data.url);
         } else {
-          toast.error(data.message || "Stripe failed");
+          toast.error(data.message || "Stripe session creation failed");
         }
       } else {
         const { data } = await axios.post(
@@ -412,7 +408,8 @@ const Cart = () => {
         }
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+      console.log("Order placement failed:", error.message);
+      toast.error(error.response?.data?.message || error.message);
     }
   };
 
@@ -424,7 +421,6 @@ const Cart = () => {
 
   return (
     <div className="flex flex-col md:flex-row py-16 max-w-6xl w-full px-6 mx-auto">
-      {/* --- Shopping Cart UI --- */}
       <div className="flex-1 max-w-4xl">
         <h1 className="text-3xl font-medium mb-6">
           Shopping Cart{" "}
@@ -432,98 +428,144 @@ const Cart = () => {
             {cartProducts.length} Items
           </span>
         </h1>
-        {/* Cart Items Mapping */}
+        <div className="grid grid-cols-[2fr_1fr_1fr] text-gray-500 text-base font-medium pb-3">
+          <p>Product Details</p>
+          <p className="text-center">Subtotal</p>
+          <p className="text-center">Action</p>
+        </div>
         {cartProducts.length === 0 ? (
           <p className="text-gray-500 py-10 text-lg">Your cart is empty.</p>
         ) : (
           cartProducts.map((product) => (
             <div
               key={product._id}
-              className="grid grid-cols-[2fr_1fr_1fr] items-center pt-3 border-b pb-3"
+              className="grid grid-cols-[2fr_1fr_1fr] items-center text-sm md:text-base font-medium pt-3 border-b border-gray-100 pb-3"
             >
-              <div className="flex items-center gap-4">
-                <img
-                  src={product.image[0] || product.image}
-                  className="w-20 h-20 object-cover"
-                  alt=""
-                />
-                <p className="font-semibold">{product.name}</p>
+              <div className="flex items-center gap-3 md:gap-6">
+                <div className="w-24 h-24 border border-gray-300 rounded overflow-hidden">
+                  <img
+                    src={product.image[0] || product.image}
+                    className="w-full h-full object-cover"
+                    alt={product.name}
+                  />
+                </div>
+                <div>
+                  <p className="font-semibold text-black">{product.name}</p>
+                  <p className="text-gray-500/70">
+                    Size: {product.size || "N/A"}
+                  </p>
+                </div>
               </div>
-              <p className="text-center">
+              <p className="text-center text-black">
                 {currency}
                 {product.offerPrice * cartItems[product._id]}
               </p>
               <button
+                type="button"
                 onClick={() => removeFromCart(product._id)}
-                className="mx-auto"
+                className="mx-auto text-red-500 cursor-pointer"
               >
-                <img src={assets.remove_icon} className="w-6" />
+                <img
+                  src={assets.remove_icon}
+                  alt="Remove"
+                  className="w-6 h-6"
+                />
               </button>
             </div>
           ))
         )}
+        <button
+          type="button"
+          onClick={() => navigate("/all-products")}
+          className="mt-8 text-primary font-medium cursor-pointer"
+        >
+          &larr; Continue Shopping
+        </button>
       </div>
 
-      {/* --- Order Summary UI --- */}
-      <div className="max-w-[360px] w-full bg-gray-100/40 p-5 max-md:mt-16 border h-fit">
+      <div className="max-w-[360px] w-full bg-gray-100/40 p-5 max-md:mt-16 border border-gray-300/70 h-fit">
         <h2 className="text-xl font-medium">Order Summary</h2>
-        <div className="relative mt-5">
+        <hr className="my-5 border-gray-300" />
+        <div className="mb-6 relative">
           <p className="text-sm font-medium uppercase">Delivery Address</p>
           <div className="flex justify-between items-start mt-2">
             {selectedAddress ? (
-              <div className="text-sm bg-white p-2 rounded border w-[75%]">
-                <p className="font-semibold">{selectedAddress.firstName}</p>
+              <div className="text-sm text-gray-700 bg-white p-2 rounded border border-gray-200 w-[75%]">
+                <p className="font-semibold">
+                  {selectedAddress.firstName} {selectedAddress.lastName}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {selectedAddress.street}, {selectedAddress.city}
+                </p>
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No address selected</p>
+              <p className="text-gray-500 text-sm">No address found</p>
             )}
             <button
+              type="button"
               onClick={() => setShowAddress(!showAddress)}
-              className="text-primary text-sm"
+              className="text-primary hover:underline text-sm cursor-pointer"
             >
               Change
             </button>
           </div>
 
           {showAddress && (
-            <div className="absolute top-10 w-full bg-white border shadow-lg z-10">
+            <div className="absolute top-16 w-full bg-white border border-gray-300 text-sm z-10 shadow-lg max-h-48 overflow-y-auto rounded">
               {addresses.map((addr) => (
                 <button
+                  type="button"
                   key={addr._id}
                   onClick={() => {
                     setSelectedAddress(addr);
                     setShowAddress(false);
                   }}
-                  className="w-full text-left p-2 hover:bg-gray-100"
+                  className="w-full text-left p-2 hover:bg-gray-100 cursor-pointer border-b"
                 >
-                  {addr.firstName}
+                  <p>
+                    {addr.firstName} {addr.lastName}
+                  </p>
+                  <p className="text-xs text-gray-400">{addr.street}</p>
                 </button>
               ))}
-              {/* YAHA LOGIN CHECK LAGAYA HAI */}
+              {/* YAHA LOGIN CHECK ADD KIYA HAI */}
               <button
+                type="button"
                 onClick={() => {
                   if (!user) {
-                    setShowUserLogin(true); // Login Popup Open
-                    return;
+                    setShowUserLogin(true); // Login Popup trigger
+                    setShowAddress(false);
+                  } else {
+                    navigate("/add-address");
                   }
-                  navigate("/add-address");
                 }}
-                className="w-full p-2 text-primary font-medium bg-gray-50"
+                className="w-full p-2 text-primary text-center hover:bg-primary/10 cursor-pointer font-medium bg-gray-50"
               >
                 + Add New Address
               </button>
             </div>
           )}
+          <p className="text-sm font-medium uppercase mt-6">Payment Method</p>
+          <select
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            className="w-full bg-white border border-gray-300 px-3 py-2 mt-2 outline-none rounded text-sm cursor-pointer"
+          >
+            <option value="COD">Cash On Delivery (COD)</option>
+            <option value="Stripe">Stripe (Card Payment)</option>
+          </select>
         </div>
-
+        <hr className="border-gray-300" />
         <button
+          type="button"
           onClick={handlePlaceOrder}
-          className="w-full py-3 mt-6 bg-primary text-white uppercase text-sm"
+          className="w-full py-3 mt-6 bg-primary text-white font-medium hover:bg-primary-dull transition rounded shadow cursor-pointer uppercase text-sm"
         >
-          Place Order
+          {paymentMethod === "Stripe" ? "Pay with Stripe" : "Place Order (COD)"}
         </button>
       </div>
     </div>
   );
 };
+
 export default Cart;
