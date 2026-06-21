@@ -327,7 +327,7 @@ const Cart = () => {
     navigate,
     axios,
     user,
-    setShowUserLogin, // Login modal show karne ke liye
+    setShowUserLogin, // Login modal trigger karne ke liye
   } = useAppContext();
 
   const [showAddress, setShowAddress] = useState(false);
@@ -357,9 +357,6 @@ const Cart = () => {
       if (data.success && data.addresses.length > 0) {
         setAddresses(data.addresses);
         setSelectedAddress(data.addresses[0]);
-      } else {
-        setAddresses([]);
-        setSelectedAddress(null);
       }
     } catch (error) {
       console.log("Error fetching addresses:", error.message);
@@ -367,7 +364,9 @@ const Cart = () => {
   };
 
   const handlePlaceOrder = async () => {
+    // Agar user login nahi hai, to login modal dikhayein
     if (!user) {
+      setShowUserLogin(true);
       return toast.error("Please login to place an order!");
     }
     if (!selectedAddress) {
@@ -425,6 +424,7 @@ const Cart = () => {
 
   return (
     <div className="flex flex-col md:flex-row py-16 max-w-6xl w-full px-6 mx-auto">
+      {/* --- Shopping Cart UI --- */}
       <div className="flex-1 max-w-4xl">
         <h1 className="text-3xl font-medium mb-6">
           Shopping Cart{" "}
@@ -432,72 +432,52 @@ const Cart = () => {
             {cartProducts.length} Items
           </span>
         </h1>
-
+        {/* Cart Items Mapping */}
         {cartProducts.length === 0 ? (
           <p className="text-gray-500 py-10 text-lg">Your cart is empty.</p>
         ) : (
           cartProducts.map((product) => (
             <div
               key={product._id}
-              className="grid grid-cols-[2fr_1fr_1fr] items-center text-sm md:text-base font-medium pt-3 border-b border-gray-100 pb-3"
+              className="grid grid-cols-[2fr_1fr_1fr] items-center pt-3 border-b pb-3"
             >
-              <div className="flex items-center gap-3 md:gap-6">
-                <div className="w-24 h-24 border border-gray-300 rounded overflow-hidden">
-                  <img
-                    src={product.image[0] || product.image}
-                    className="w-full h-full object-cover"
-                    alt={product.name}
-                  />
-                </div>
-                <div>
-                  <p className="font-semibold text-black">{product.name}</p>
-                  <p className="text-gray-500/70">
-                    Size: {product.size || "N/A"}
-                  </p>
-                </div>
+              <div className="flex items-center gap-4">
+                <img
+                  src={product.image[0] || product.image}
+                  className="w-20 h-20 object-cover"
+                  alt=""
+                />
+                <p className="font-semibold">{product.name}</p>
               </div>
-              <p className="text-center text-black">
+              <p className="text-center">
                 {currency}
                 {product.offerPrice * cartItems[product._id]}
               </p>
               <button
-                type="button"
                 onClick={() => removeFromCart(product._id)}
-                className="mx-auto text-red-500"
+                className="mx-auto"
               >
-                <img
-                  src={assets.remove_icon}
-                  alt="Remove"
-                  className="w-6 h-6"
-                />
+                <img src={assets.remove_icon} className="w-6" />
               </button>
             </div>
           ))
         )}
       </div>
 
-      {/* Order Summary Section */}
-      <div className="max-w-[360px] w-full bg-gray-100/40 p-5 max-md:mt-16 border border-gray-300/70 h-fit">
+      {/* --- Order Summary UI --- */}
+      <div className="max-w-[360px] w-full bg-gray-100/40 p-5 max-md:mt-16 border h-fit">
         <h2 className="text-xl font-medium">Order Summary</h2>
-        <hr className="my-5 border-gray-300" />
-
-        <div className="mb-6 relative">
+        <div className="relative mt-5">
           <p className="text-sm font-medium uppercase">Delivery Address</p>
           <div className="flex justify-between items-start mt-2">
             {selectedAddress ? (
-              <div className="text-sm text-gray-700 bg-white p-2 rounded border w-[75%]">
-                <p className="font-semibold">
-                  {selectedAddress.firstName} {selectedAddress.lastName}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {selectedAddress.street}
-                </p>
+              <div className="text-sm bg-white p-2 rounded border w-[75%]">
+                <p className="font-semibold">{selectedAddress.firstName}</p>
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">No address found</p>
+              <p className="text-sm text-gray-500">No address selected</p>
             )}
             <button
-              type="button"
               onClick={() => setShowAddress(!showAddress)}
               className="text-primary text-sm"
             >
@@ -506,7 +486,7 @@ const Cart = () => {
           </div>
 
           {showAddress && (
-            <div className="absolute top-16 w-full bg-white border shadow-lg z-10 rounded">
+            <div className="absolute top-10 w-full bg-white border shadow-lg z-10">
               {addresses.map((addr) => (
                 <button
                   key={addr._id}
@@ -516,21 +496,19 @@ const Cart = () => {
                   }}
                   className="w-full text-left p-2 hover:bg-gray-100"
                 >
-                  {addr.firstName} - {addr.street}
+                  {addr.firstName}
                 </button>
               ))}
+              {/* YAHA LOGIN CHECK LAGAYA HAI */}
               <button
-                type="button"
                 onClick={() => {
                   if (!user) {
-                    setShowUserLogin(true);
-                    toast.error("Please login to add address");
+                    setShowUserLogin(true); // Login Popup Open
                     return;
                   }
-                  setShowAddress(false);
                   navigate("/add-address");
                 }}
-                className="w-full p-2 text-primary text-center font-medium bg-gray-50"
+                className="w-full p-2 text-primary font-medium bg-gray-50"
               >
                 + Add New Address
               </button>
@@ -540,7 +518,7 @@ const Cart = () => {
 
         <button
           onClick={handlePlaceOrder}
-          className="w-full py-3 bg-primary text-white font-medium rounded uppercase text-sm"
+          className="w-full py-3 mt-6 bg-primary text-white uppercase text-sm"
         >
           Place Order
         </button>
@@ -548,5 +526,4 @@ const Cart = () => {
     </div>
   );
 };
-
 export default Cart;
